@@ -1,0 +1,37 @@
+# ==============================================================================
+# Adaptive Threat Intelligence - Python Dependencies
+# Target Python Version: 3.11 - 3.13
+# ==============================================================================
+
+# Core Numerical & Data Processing
+numpy>=2.1.0,<3.0.0
+pandas>=2.2.0,<3.0.0
+scipy>=1.14.0,<2.0.0
+
+# Machine Learning & Statistical Modeling
+scikit-learn>=1.6.0,<2.0.0
+xgboost>=3.0.0,<4.0.0
+imbalanced-learn>=0.13.0,<0.15.0
+joblib>=1.4.0,<2.0.0
+
+# Explainability & Model Interpretability
+shap>=0.50.0,<1.0.0
+
+# Central Configuration & Serialization
+pydantic>=2.10.0,<3.0.0
+pydantic-settings>=2.7.0,<3.0.0
+pyyaml>=6.0.2,<7.0.0
+
+# Backend Framework & Async Server
+fastapi>=0.115.0,<1.0.0
+uvicorn[standard]>=0.34.0,<1.0.0
+starlette>=0.40.0,<1.0.0
+
+# Relational Persistence & ORM
+sqlalchemy>=2.0.35,<3.0.0
+
+# Development, Testing & Code Quality
+pytest>=8.3.0,<9.0.0
+pytest-asyncio>=0.24.0,<1.0.0
+httpx>=0.28.0,<1.0.0
+python-dotenv>=1.0.1,<2.0.0
