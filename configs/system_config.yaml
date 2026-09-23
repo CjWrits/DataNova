@@ -1,0 +1,84 @@
+# ==============================================================================
+# Adaptive Threat Intelligence — Central System Configuration
+# ==============================================================================
+
+project:
+  name: "Adaptive Threat Intelligence"
+  version: "0.1.0"
+  random_seed: 42
+
+paths:
+  raw_data_dir: "data/raw"
+  processed_data_dir: "data/processed"
+  external_data_dir: "data/external"
+  artifacts_dir: "artifacts"
+  models_dir: "artifacts/models"
+  metrics_dir: "artifacts/metrics"
+  reports_dir: "artifacts/reports"
+
+data:
+  dataset_name: "CIC-IDS-2017" # Target benchmark dataset
+  target_column: "label"
+  binary_classification: true
+  positive_class_label: "Attack"
+  negative_class_label: "Benign"
+  test_size: 0.20
+  val_size: 0.15
+  stratify: true
+  temporal_split: false # Enable if chronological timestamps are verified
+
+preprocessing:
+  scaler: "StandardScaler" # Options: StandardScaler, RobustScaler, MinMaxScaler
+  handle_missing: "median" # Options: median, mean, drop
+  handle_infinite: "clip_max" # Network flows often contain inf values for transfer rates
+  categorical_encoding: "OneHotEncoder"
+  drop_high_cardinality_cols:
+    - "Flow_ID"
+    - "Source_IP"
+    - "Destination_IP"
+    - "Timestamp"
+
+imbalance_strategy:
+  method: "cost_sensitive" # Options: cost_sensitive, smote, class_weight, focal_loss
+  smote_ratio: 0.25 # Only applied to training split if method == 'smote'
+  cost_matrix:
+    false_positive_cost: 1.0  # Cost of analyst investigating a false alarm
+    false_negative_cost: 20.0 # Cost of missing a genuine security breach
+    true_positive_cost: 0.0
+    true_negative_cost: 0.0
+
+model:
+  algorithm: "xgboost" # Options: xgboost, random_forest, lightgbm, logistic_regression
+  hyperparameters:
+    n_estimators: 250
+    max_depth: 6
+    learning_rate: 0.05
+    subsample: 0.8
+    colsample_bytree: 0.8
+    scale_pos_weight: 5.0 # Scaled for positive class imbalance
+    tree_method: "hist"
+    eval_metric: "logloss"
+
+explainability:
+  explainer_type: "tree"
+  background_sample_size: 200 # Representative background sample for baseline expectations
+  top_k_features: 10 # Number of contributing features to return per alert
+
+drift:
+  detection_window_size: 1000 # Number of recent inference records in sliding window
+  reference_sample_size: 5000 # Number of samples from validation split for baseline
+  ks_test_p_value_threshold: 0.05
+  psi_alert_threshold: 0.25
+  psi_warning_threshold: 0.10
+  monitored_features:
+    - "Flow_Duration"
+    - "Total_Fwd_Packets"
+    - "Total_Backward_Packets"
+    - "Flow_Bytes_s"
+    - "Flow_Packets_s"
+    - "Packet_Length_Mean"
+
+server:
+  host: "127.0.0.1"
+  port: 8000
+  api_prefix: "/api/v1"
