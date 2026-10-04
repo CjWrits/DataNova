@@ -1,0 +1,399 @@
+{
+  "dataset_structure": {
+    "train_rows": 82332,
+    "train_cols": 45,
+    "test_rows": 175341,
+    "test_cols": 45,
+    "total_rows": 257673,
+    "columns_match": true,
+    "train_missing_cells": 0,
+    "test_missing_cells": 0,
+    "train_duplicates_with_id": 0,
+    "test_duplicates_with_id": 0,
+    "train_duplicates_no_id": 26387,
+    "test_duplicates_no_id": 67601,
+    "train_test_overlap_exact_rows": 109106,
+    "train_test_overlap_pct_of_train": 132.52,
+    "train_test_feature_overlap_rows": 133392
+  },
+  "class_distributions": {
+    "binary_train": {
+      "1": {
+        "count": 45332,
+        "percentage": 55.06
+      },
+      "0": {
+        "count": 37000,
+        "percentage": 44.94
+      }
+    },
+    "binary_test": {
+      "1": {
+        "count": 119341,
+        "percentage": 68.0622
+      },
+      "0": {
+        "count": 56000,
+        "percentage": 31.9378
+      }
+    },
+    "binary_combined": {
+      "1": {
+        "count": 164673,
+        "percentage": 63.9077
+      },
+      "0": {
+        "count": 93000,
+        "percentage": 36.0923
+      }
+    },
+    "multiclass_train": {
+      "Normal": {
+        "count": 37000,
+        "percentage": 44.94
+      },
+      "Generic": {
+        "count": 18871,
+        "percentage": 22.9206
+      },
+      "Exploits": {
+        "count": 11132,
+        "percentage": 13.5209
+      },
+      "Fuzzers": {
+        "count": 6062,
+        "percentage": 7.3629
+      },
+      "DoS": {
+        "count": 4089,
+        "percentage": 4.9665
+      },
+      "Reconnaissance": {
+        "count": 3496,
+        "percentage": 4.2462
+      },
+      "Analysis": {
+        "count": 677,
+        "percentage": 0.8223
+      },
+      "Backdoor": {
+        "count": 583,
+        "percentage": 0.7081
+      },
+      "Shellcode": {
+        "count": 378,
+        "percentage": 0.4591
+      },
+      "Worms": {
+        "count": 44,
+        "percentage": 0.0534
+      }
+    },
+    "multiclass_test": {
+      "Normal": {
+        "count": 56000,
+        "percentage": 31.9378
+      },
+      "Generic": {
+        "count": 40000,
+        "percentage": 22.8127
+      },
+      "Exploits": {
+        "count": 33393,
+        "percentage": 19.0446
+      },
+      "Fuzzers": {
+        "count": 18184,
+        "percentage": 10.3706
+      },
+      "DoS": {
+        "count": 12264,
+        "percentage": 6.9944
+      },
+      "Reconnaissance": {
+        "count": 10491,
+        "percentage": 5.9832
+      },
+      "Analysis": {
+        "count": 2000,
+        "percentage": 1.1406
+      },
+      "Backdoor": {
+        "count": 1746,
+        "percentage": 0.9958
+      },
+      "Shellcode": {
+        "count": 1133,
+        "percentage": 0.6462
+      },
+      "Worms": {
+        "count": 130,
+        "percentage": 0.0741
+      }
+    },
+    "multiclass_combined": {
+      "Normal": {
+        "count": 93000,
+        "percentage": 36.0923
+      },
+      "Generic": {
+        "count": 58871,
+        "percentage": 22.8472
+      },
+      "Exploits": {
+        "count": 44525,
+        "percentage": 17.2797
+      },
+      "Fuzzers": {
+        "count": 24246,
+        "percentage": 9.4096
+      },
+      "DoS": {
+        "count": 16353,
+        "percentage": 6.3464
+      },
+      "Reconnaissance": {
+        "count": 13987,
+        "percentage": 5.4282
+      },
+      "Analysis": {
+        "count": 2677,
+        "percentage": 1.0389
+      },
+      "Backdoor": {
+        "count": 2329,
+        "percentage": 0.9039
+      },
+      "Shellcode": {
+        "count": 1511,
+        "percentage": 0.5864
+      },
+      "Worms": {
+        "count": 174,
+        "percentage": 0.0675
+      }
+    }
+  },
+  "feature_statistics": {
+    "num_features_count": 39,
+    "cat_features_count": 4,
+    "correlations_train": {
+      "dur": -0.0011452513082882696,
+      "spkts": -0.02773078507129037,
+      "dpkts": -0.061515076969565916,
+      "sbytes": 0.02064108200648439,
+      "dbytes": -0.032632357974069555,
+      "rate": 0.3286290883562834,
+      "sttl": 0.5041592889299984,
+      "dttl": -0.09859087338579806,
+      "sload": 0.12454812078702732,
+      "dload": -0.2805342778137018,
+      "sloss": 0.006359746370128191,
+      "dloss": -0.04439926649542685,
+      "sinpkt": -0.12076836104478482,
+      "dinpkt": -0.03758484269036907,
+      "sjit": -0.027396878912684934,
+      "djit": -0.027130866357369405,
+      "swin": -0.41450387552982076,
+      "stcpb": -0.2814281464319755,
+      "dtcpb": -0.28286028923082474,
+      "dwin": -0.3692570056704482,
+      "tcprtt": -0.14879998464841382,
+      "synack": -0.14994398228249162,
+      "ackdat": -0.12052191251388333,
+      "smean": -0.0611455638554957,
+      "dmean": -0.21154369720710256,
+      "trans_depth": -0.02580419086117515,
+      "response_body_len": -0.01641413679013362,
+      "ct_srv_src": 0.2901947298270927,
+      "ct_state_ttl": 0.3185166687357015,
+      "ct_dst_ltm": 0.2579953010595733,
+      "ct_src_dport_ltm": 0.3415134280582265,
+      "ct_dst_sport_ltm": 0.39366774688983386,
+      "ct_dst_src_ltm": 0.2799885108915792,
+      "is_ftp_login": -0.016205526816783025,
+      "ct_ftp_cmd": -0.017138235134384908,
+      "ct_flw_http_mthd": -0.07502845308187367,
+      "ct_src_ltm": 0.276493689526928,
+      "ct_srv_dst": 0.2929312969699988,
+      "is_sm_ips_ports": -0.1174071197748236
+    },
+    "correlations_test": {
+      "dur": 0.03617458158684787,
+      "spkts": -0.05217808377308446,
+      "dpkts": -0.11859109296888244,
+      "sbytes": 0.018575648085859046,
+      "dbytes": -0.0768708605697676,
+      "rate": 0.33797851137339274,
+      "sttl": 0.6927414405810618,
+      "dttl": 0.09504860499575583,
+      "sload": 0.18286965908055947,
+      "dload": -0.39373937360737793,
+      "sloss": -0.0006401126605875035,
+      "dloss": -0.09468497046041177,
+      "sinpkt": -0.17611032213794267,
+      "dinpkt": -0.022887477717625553,
+      "sjit": -0.007069267648582046,
+      "djit": -0.060869981430948274,
+      "swin": -0.33363339385650426,
+      "stcpb": -0.2550060333293441,
+      "dtcpb": -0.25033957893665454,
+      "dwin": -0.31962552095013175,
+      "tcprtt": 0.08158406079561778,
+      "synack": 0.0582989292085965,
+      "ackdat": 0.09736393873378807,
+      "smean": -0.010797569662018855,
+      "dmean": -0.3418063059609516,
+      "trans_depth": 0.010800959521764275,
+      "response_body_len": -0.02136134981329708,
+      "ct_srv_src": 0.2290439298355265,
+      "ct_state_ttl": 0.5777039809439691,
+      "ct_dst_ltm": 0.22988728781104925,
+      "ct_src_dport_ltm": 0.30557875347305674,
+      "ct_dst_sport_ltm": 0.3572133373537451,
+      "ct_dst_src_ltm": 0.303855175669309,
+      "is_ftp_login": -0.01105458431905189,
+      "ct_ftp_cmd": -0.01105458431905189,
+      "ct_flw_http_mthd": 0.01580009244296299,
+      "ct_src_ltm": 0.238225078695344,
+      "ct_srv_dst": 0.22804626706745534,
+      "is_sm_ips_ports": -0.18467949820373658
+    },
+    "collinear_pairs": [
+      {
+        "feature_1": "dbytes",
+        "feature_2": "dloss",
+        "correlation": 0.9971
+      },
+      {
+        "feature_1": "sbytes",
+        "feature_2": "sloss",
+        "correlation": 0.995
+      },
+      {
+        "feature_1": "is_ftp_login",
+        "feature_2": "ct_ftp_cmd",
+        "correlation": 0.9943
+      },
+      {
+        "feature_1": "dpkts",
+        "feature_2": "dloss",
+        "correlation": 0.9815
+      },
+      {
+        "feature_1": "ct_srv_src",
+        "feature_2": "ct_srv_dst",
+        "correlation": 0.9778
+      },
+      {
+        "feature_1": "dpkts",
+        "feature_2": "dbytes",
+        "correlation": 0.9764
+      },
+      {
+        "feature_1": "spkts",
+        "feature_2": "sloss",
+        "correlation": 0.9736
+      },
+      {
+        "feature_1": "spkts",
+        "feature_2": "sbytes",
+        "correlation": 0.9657
+      },
+      {
+        "feature_1": "ct_dst_ltm",
+        "feature_2": "ct_src_dport_ltm",
+        "correlation": 0.9604
+      },
+      {
+        "feature_1": "swin",
+        "feature_2": "dwin",
+        "correlation": 0.9601
+      },
+      {
+        "feature_1": "sinpkt",
+        "feature_2": "is_sm_ips_ports",
+        "correlation": 0.9445
+      },
+      {
+        "feature_1": "ct_dst_src_ltm",
+        "feature_2": "ct_srv_dst",
+        "correlation": 0.941
+      },
+      {
+        "feature_1": "tcprtt",
+        "feature_2": "synack",
+        "correlation": 0.9395
+      },
+      {
+        "feature_1": "ct_srv_src",
+        "feature_2": "ct_dst_src_ltm",
+        "correlation": 0.9338
+      },
+      {
+        "feature_1": "ct_src_dport_ltm",
+        "feature_2": "ct_src_ltm",
+        "correlation": 0.9332
+      },
+      {
+        "feature_1": "ct_dst_ltm",
+        "feature_2": "ct_src_ltm",
+        "correlation": 0.9323
+      },
+      {
+        "feature_1": "ct_src_dport_ltm",
+        "feature_2": "ct_dst_sport_ltm",
+        "correlation": 0.9116
+      }
+    ],
+    "categorical_differences": {
+      "proto": {
+        "train_unique": 131,
+        "test_unique": 133,
+        "in_test_not_train": [
+          "icmp",
+          "rtp"
+        ],
+        "in_train_not_test": []
+      },
+      "service": {
+        "train_unique": 13,
+        "test_unique": 13,
+        "in_test_not_train": [],
+        "in_train_not_test": []
+      },
+      "state": {
+        "train_unique": 7,
+        "test_unique": 9,
+        "in_test_not_train": [
+          "ECO",
+          "PAR",
+          "URN",
+          "no"
+        ],
+        "in_train_not_test": [
+          "ACC",
+          "CLO"
+        ]
+      },
+      "attack_cat": {
+        "train_unique": 10,
+        "test_unique": 10,
+        "in_test_not_train": [],
+        "in_train_not_test": []
+      }
+    },
+    "id_leakage": {
+      "train_id_label_corr": -0.3875,
+      "test_id_label_corr": 0.7272
+    }
+  },
+  "generated_visualizations": [
+    "research\\visualizations\\class_imbalance_binary.png",
+    "research\\visualizations\\attack_category_distribution.png",
+    "research\\visualizations\\minority_class_breakdown.png",
+    "research\\visualizations\\feature_correlation_heatmap.png",
+    "research\\visualizations\\synthetic_artifact_leakage_sttl.png",
+    "research\\visualizations\\id_target_leakage.png"
+  ]
+}
