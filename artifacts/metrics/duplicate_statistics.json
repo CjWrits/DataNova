@@ -1,0 +1,92 @@
+{
+  "total_records": 257673,
+  "unique_feature_groups": 153684,
+  "internal_duplicates_count": 103989,
+  "internal_duplicates_percentage": 40.36,
+  "binary_task": {
+    "conflicting_groups_count": 414,
+    "conflicting_rows_quarantined": 1758,
+    "eligible_clean_rows": 255915,
+    "eligible_clean_groups": 153270
+  },
+  "multiclass_task": {
+    "conflicting_groups_count": 2445,
+    "conflicting_rows_quarantined": 40400,
+    "eligible_clean_rows": 217273,
+    "eligible_clean_groups": 151239,
+    "consistent_in_binary_but_conflicting_in_multiclass_groups": 2031,
+    "consistent_in_binary_but_conflicting_in_multiclass_rows": 38642
+  },
+  "category_breakdown": {
+    "Normal": {
+      "raw_rows": 93000,
+      "raw_unique_groups": 85722,
+      "conflicting_rows": 928,
+      "eligible_clean_rows": 92072,
+      "eligible_clean_groups": 85308
+    },
+    "Reconnaissance": {
+      "raw_rows": 13987,
+      "raw_unique_groups": 9991,
+      "conflicting_rows": 2246,
+      "eligible_clean_rows": 11741,
+      "eligible_clean_groups": 8419
+    },
+    "Backdoor": {
+      "raw_rows": 2329,
+      "raw_unique_groups": 1880,
+      "conflicting_rows": 1977,
+      "eligible_clean_rows": 352,
+      "eligible_clean_groups": 350
+    },
+    "DoS": {
+      "raw_rows": 16353,
+      "raw_unique_groups": 5500,
+      "conflicting_rows": 12663,
+      "eligible_clean_rows": 3690,
+      "eligible_clean_groups": 3624
+    },
+    "Exploits": {
+      "raw_rows": 44525,
+      "raw_unique_groups": 27434,
+      "conflicting_rows": 16507,
+      "eligible_clean_rows": 28018,
+      "eligible_clean_groups": 25451
+    },
+    "Analysis": {
+      "raw_rows": 2677,
+      "raw_unique_groups": 2032,
+      "conflicting_rows": 2061,
+      "eligible_clean_rows": 616,
+      "eligible_clean_groups": 450
+    },
+    "Fuzzers": {
+      "raw_rows": 24246,
+      "raw_unique_groups": 20960,
+      "conflicting_rows": 3617,
+      "eligible_clean_rows": 20629,
+      "eligible_clean_groups": 18749
+    },
+    "Worms": {
+      "raw_rows": 174,
+      "raw_unique_groups": 171,
+      "conflicting_rows": 15,
+      "eligible_clean_rows": 159,
+      "eligible_clean_groups": 159
+    },
+    "Shellcode": {
+      "raw_rows": 1511,
+      "raw_unique_groups": 1456,
+      "conflicting_rows": 13,
+      "eligible_clean_rows": 1498,
+      "eligible_clean_groups": 1446
+    },
+    "Generic": {
+      "raw_rows": 58871,
+      "raw_unique_groups": 7599,
+      "conflicting_rows": 373,
+      "eligible_clean_rows": 58498,
+      "eligible_clean_groups": 7283
+    }
+  }
+}
