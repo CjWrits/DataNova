@@ -59,6 +59,13 @@ class InfClipper(BaseEstimator, TransformerMixin):
 
         return X_mat
 
+    def get_feature_names_out(self, input_features: Optional[np.ndarray | List[str]] = None) -> np.ndarray:
+        """Return feature names unchanged for downstream ColumnTransformer compatibility."""
+        if input_features is None:
+            n_feats = len(self.max_finite_) if self.max_finite_ is not None else 0
+            return np.array([f"x{i}" for i in range(n_feats)], dtype=object)
+        return np.asarray(input_features, dtype=object)
+
 
 class FeatureSchemaSelector(BaseEstimator, TransformerMixin):
     """Filters predictor matrices to conform to primary or alternative schemas."""
@@ -82,6 +89,10 @@ class FeatureSchemaSelector(BaseEstimator, TransformerMixin):
         if isinstance(X, pd.DataFrame):
             return X[self.selected_columns_].copy()
         return X
+
+    def get_feature_names_out(self, input_features: Optional[np.ndarray | List[str]] = None) -> np.ndarray:
+        """Return selected schema columns."""
+        return np.array(self.selected_columns_, dtype=object)
 
 
 def build_categorical_encoder() -> OneHotEncoder:
