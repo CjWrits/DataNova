@@ -26,6 +26,6 @@ When `sttl` is removed:
 - Linear models experience noticeable performance degradation because they lack nonlinear interactions to compensate for the loss of a strong linear separator.
 - Tree-based models (XGBoost and Random Forest) retain strong detection capability, proving that network flow dynamics (packet volumes, rates, TCP handshake timings) carry sufficient signal for intrusion detection even in the absence of testbed TTL artifacts.
 
-## 4. Operational Recommendation for Real-World Deployment
+## 4. Operational Classification: Robustness-Oriented Alternative
 
-Models trained without `sttl` should be considered the primary candidates for production deployment where network adversaries may spoof TTL headers or where traffic originates from heterogeneous OS environments.
+Models trained without `sttl` represent a **robustness-oriented experimental alternative** designed to evaluate resilience against synthetic testbed artifacts, rather than a proven production-hardened system. Because this hypothesis has not yet been evaluated on independent real-world captures (e.g., CIC-IDS2017, CTU-13), No-STTL must be documented as an experimental robustness track rather than an unqualified production recommendation.

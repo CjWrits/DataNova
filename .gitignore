@@ -77,10 +77,14 @@ data/external/*
 artifacts/models/*
 !artifacts/models/.gitkeep
 !artifacts/models/README.md
+!artifacts/models/phase4/
+!artifacts/models/phase4/.gitkeep
 artifacts/metrics/*
 !artifacts/metrics/.gitkeep
 !artifacts/metrics/README.md
 !artifacts/metrics/*.json
+!artifacts/metrics/phase4/
+!artifacts/metrics/phase4/*.json
 artifacts/reports/*
 !artifacts/reports/.gitkeep
 !artifacts/reports/README.md

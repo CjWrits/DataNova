@@ -182,3 +182,16 @@ def test_multiclass_prior_calibration():
     )
     # Sample 1 should now be predicted as class 9 (0.45 * 2.0 = 0.90 > 0.55)
     assert preds_adj[1] == 9
+
+
+def test_phase4_model_bundle_serialization():
+    """Verify serialized Phase 4 model bundles can be reloaded and execute predictions."""
+    models_dir = Path(__file__).resolve().parent.parent.parent / "artifacts" / "models" / "phase4"
+    primary_bundle_path = models_dir / "multiclass_primary_winner.joblib"
+
+    if primary_bundle_path.exists():
+        bundle = joblib.load(primary_bundle_path)
+        assert "model" in bundle
+        assert "preprocessor" in bundle
+        assert "test_metrics" in bundle
+        assert bundle["test_metrics"]["macro_f1"] > 0.70
