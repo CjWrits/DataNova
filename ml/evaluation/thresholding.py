@@ -56,7 +56,9 @@ def sweep_binary_thresholds(
     Returns:
         (all_points, selected_optimal_points)
     """
-    thresholds = np.linspace(0.01, 0.99, steps)
+    # Ensure exact 0.50 is present by using an odd number of steps centered at 0.50
+    eff_steps = steps if steps % 2 != 0 else steps + 1
+    thresholds = np.linspace(0.01, 0.99, eff_steps)
     points: List[ThresholdPoint] = []
 
     y_t = np.asarray(y_val_true).astype(int)

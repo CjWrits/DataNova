@@ -142,9 +142,10 @@ def test_binary_threshold_sweeping():
     # Synthetic probabilities
     y_prob = np.concatenate([np.linspace(0.05, 0.45, 50), np.linspace(0.55, 0.95, 50)])
 
-    points, opt_points = sweep_binary_thresholds(y_true, y_prob, cost_fn_ratio=5.0, steps=20)
-    assert len(points) == 20
+    points, opt_points = sweep_binary_thresholds(y_true, y_prob, cost_fn_ratio=5.0, steps=21)
+    assert len(points) == 21
     assert "default" in opt_points
+    assert opt_points["default"].threshold == pytest.approx(0.50, abs=1e-3)
     assert "f1_optimal" in opt_points
     assert "low_false_alarm" in opt_points
     assert opt_points["f1_optimal"].f1 >= 0.95
@@ -161,17 +162,21 @@ def test_wilson_confidence_interval_calculation():
 
 def test_multiclass_prior_calibration():
     """Verify calibrate_multiclass_prior_multipliers properly shifts decision threshold."""
-    y_true = np.array([0, 9])
-    # Class 0 has 0.55 prob, Class 9 has 0.45 prob
-    probs = np.zeros((2, 10))
-    probs[0, 0] = 0.9
-    probs[0, 1] = 0.1
-    probs[1, 0] = 0.55
-    probs[1, 9] = 0.45
+    # Provide 10-class representation so ROC-AUC metric calculation runs warning-free
+    y_true = np.arange(10)
+    probs = np.zeros((10, 10))
+    for i in range(10):
+        probs[i, i] = 0.8
+        probs[i, (i + 1) % 10] = 0.2
 
-    # With unadjusted argmax, sample 1 is predicted as class 0
+    # Sample 9: set class 0 to 0.55 and class 9 to 0.45
+    probs[9, :] = 0.0
+    probs[9, 0] = 0.55
+    probs[9, 9] = 0.45
+
+    # With unadjusted argmax, sample 9 is predicted as class 0
     preds_unadj = np.argmax(probs, axis=1)
-    assert preds_unadj[1] == 0
+    assert preds_unadj[9] == 0
 
     # Boost class 9 (Worms) with multiplier 2.0
     preds_adj, _ = calibrate_multiclass_prior_multipliers(
@@ -180,8 +185,8 @@ def test_multiclass_prior_calibration():
         class_names=["Normal", "Generic", "Exploits", "Fuzzers", "DoS", "Reconnaissance", "Analysis", "Backdoor", "Shellcode", "Worms"],
         boost_classes={"Worms": 2.0},
     )
-    # Sample 1 should now be predicted as class 9 (0.45 * 2.0 = 0.90 > 0.55)
-    assert preds_adj[1] == 9
+    # Sample 9 should now be predicted as class 9 (0.45 * 2.0 = 0.90 > 0.55)
+    assert preds_adj[9] == 9
 
 
 def test_phase4_model_bundle_serialization():
