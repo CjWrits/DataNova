@@ -297,8 +297,9 @@ def generate_phase6_report(
             "novel category detection, missingness rates, and prediction entropy).\n\n"
             "Furthermore, Phase 6 implements a **rule-based adaptive decision engine** that delivers actionable operational guidance "
             "to Security Operations Centers (SOCs) without ever triggering automated model replacement or unverified retraining. "
-            "Finally, a direct resilience comparison between Candidate 8 (Primary with STTL) and Candidate 10 (No-STTL) demonstrates "
-            "the concrete operational value of the No-STTL architecture under adversarial TTL perturbation.\n\n"
+            "Finally, a direct resilience comparison between Candidate 8 (Primary with STTL) and Candidate 10 (No-STTL) under synthetic "
+            "STTL perturbation confirms that Candidate 10 is invariant to changes in the excluded `sttl` feature under this controlled perturbation. "
+            "Broader robustness requires additional evaluation.\n\n"
         )
 
         f.write("## 2. Statistical Monitoring Architecture & Metric Policies\n\n")
@@ -322,12 +323,23 @@ def generate_phase6_report(
         )
         f.write("### D. Model Prediction Drift & Entropy\n")
         f.write(
-            "Monitors output probability margins: mean confidence $\\frac{1}{N}\\sum \\max_c P(c \\mid x)$, "
-            "low-confidence rate ($P < 0.60$), and prediction entropy $H(P) = -\\sum P(c) \\ln P(c)$.\n\n"
+            "Monitors output probability margins:\n"
+            "- **Prediction PSI (`Pred PSI`):** Population Stability Index computed over the 10-class predicted probability distribution comparing batch predictions against reference predictions:\n"
+            "  $$\\text{Pred PSI} = \\sum_{c=1}^{10} (q_c - p_c) \\cdot \\ln\\left(\\frac{q_c}{p_c}\\right)$$\n"
+            "  *(Note: Pred PSI is a non-negative divergence index without an upper bound of 1.0; a value such as 1.145 indicates substantial redistribution across attack classes, not a probability or proportion).*\n"
+            "- **Mean Confidence:** $\\frac{1}{N}\\sum \\max_c P(c \\mid x)$.\n"
+            "- **Low-Confidence Rate:** Proportion of flows where $\\max_c P(c \\mid x) < 0.60$.\n"
+            "- **Prediction Entropy:** $H(P) = -\\sum P(c) \\ln P(c)$.\n\n"
+        )
+        f.write("### E. Architectural Separation: Data-Quality vs. Feature Drift\n")
+        f.write(
+            "Data quality (missingness, infinities) and feature drift (PSI, KS) are tracked via independent analytical pathways:\n"
+            "- **Feature Distribution Drift:** Evaluated on finite, populated observations to measure genuine density shifts.\n"
+            "- **Data Quality Monitoring:** Tracks null rates (NaN) and non-finite rates (Inf). Missing or invalid values represent data-quality defects and pipeline failures; they are never discarded silently or interpreted as distributional stability.\n\n"
         )
 
         f.write("## 3. Controlled Simulation Scenarios & Quantitative Results\n\n")
-        f.write("| Scenario ID | Scenario Name | Target Features | Feature Status | Drifting Features | Pred PSI | Mean Conf | Low-Conf Rate | Primary Recommended Action |\n")
+        f.write("| Scenario ID | Scenario Name | Target Features | Feature Drift Status | Drifting Features Count | Pred PSI (Prediction Divergence) | Mean Conf | Low-Conf Rate (<0.60) | Primary Recommended Action |\n")
         f.write("| :--- | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :--- |\n")
 
         for res in scenario_results:
@@ -356,18 +368,23 @@ def generate_phase6_report(
                 f.write(f"  - `[{dec.priority}] {dec.action.value}`: {dec.trigger_reason} -> *{dec.operational_guidance}*\n")
             f.write("\n")
 
-        f.write("## 5. Candidate 8 vs Candidate 10 Resilience Under STTL Perturbation\n\n")
+        f.write("## 5. Candidate 8 vs Candidate 10 Invariance Under Synthetic STTL Perturbation\n\n")
         f.write(
-            "To evaluate the real-world operational value of the No-STTL architecture developed in Phase 4, "
-            "Scenario 5 simulated adversarial TTL spoofing by randomizing `sttl` across $[1, 255]$ for all 1,000 flows:\n\n"
+            "To evaluate the impact of the synthetic testbed artifact `sttl` identified during exploratory analysis, "
+            "Scenario 5 applied a controlled synthetic perturbation randomizing `sttl` uniformly across $[1, 255]$ for all 1,000 flows:\n\n"
             f"- **Candidate 8 (Primary Model with STTL):** **{c8_shift_rate:.2f}% of predictions were altered** "
-            "solely by changing `sttl`, without modifying any underlying packet volumes, durations, or TCP flags.\n"
+            "solely by changing `sttl`, without modifying any underlying packet volumes, durations, connection fan-outs, or protocol flags.\n"
             f"- **Candidate 10 (Robustness Model without STTL):** **0.00% of predictions were altered**. "
-            "Candidate 10 demonstrated **complete mathematical invariance** to TTL spoofing.\n\n"
+            "Candidate 10 demonstrated **complete mathematical invariance** to changes in the excluded `sttl` feature.\n\n"
+            "### Interpretation & Scientific Scope\n"
+            "The experiment confirms that Candidate 10 is invariant to changes in the excluded `sttl` feature under this controlled perturbation. "
+            "This verifies that C10 does not depend on `sttl`. However, this invariance does not establish general production robustness "
+            "against other forms of distribution shift, evasion techniques, or real network attacks. Broader robustness requires additional "
+            "evaluation on independent network traffic captures.\n\n"
             "### Adaptive Engine Action\n"
-            "The adaptive engine recognized that `sttl` exhibited critical drift while core flow features remained stable, "
-            "triggering the specialized recommendation: **`RECOMMEND_NO_STTL_FALLBACK`**. In a production SOC, this instructs "
-            "operators to route traffic through Candidate 10, neutralizing adversarial TTL spoofing without retraining.\n\n"
+            "The adaptive engine recognized that `sttl` exhibited critical isolated divergence while core flow features remained stable, "
+            "triggering the specialized recommendation: **`RECOMMEND_NO_STTL_FALLBACK`**. In an operational SOC, this provides decision support "
+            "to operators to evaluate parallel inference against Candidate 10, mitigating synthetic TTL sensitivity without altering or retraining deployed models.\n\n"
         )
 
         f.write("## 6. Strict Implementation Boundaries Enforced\n\n")
