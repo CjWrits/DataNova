@@ -145,6 +145,8 @@ out/
 .turbo/
 frontend/.turbo/
 .vercel
+*.tsbuildinfo
+
 
 # IDE and Editor configurations
 .vscode/*

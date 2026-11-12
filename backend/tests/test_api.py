@@ -433,3 +433,65 @@ class TestConsistencyAndImmutability:
         # Reference count and detector reference dataframe must remain unchanged
         assert monitoring_service.ref_row_count == initial_ref_count
         assert len(monitoring_service.detector.ref_df) == initial_ref_count
+
+
+class TestCorsConfiguration:
+    """Verifies CORS preflight and cross-origin POST behavior under allow_credentials=False."""
+
+    def test_cors_options_preflight_for_binary_prediction(self, client: TestClient) -> None:
+        """Verify OPTIONS preflight for POST /api/v1/predict/binary succeeds with correct headers."""
+        headers = {
+            "Origin": "http://localhost:3000",
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "content-type,accept",
+        }
+        response = client.options("/api/v1/predict/binary", headers=headers)
+        assert response.status_code == 200
+        assert response.headers.get("access-control-allow-origin") == "*"
+        assert "POST" in response.headers.get("access-control-allow-methods", "")
+        # allow_credentials=False must not return Access-Control-Allow-Credentials: true
+        assert response.headers.get("access-control-allow-credentials") is None
+
+    def test_cors_actual_post_for_binary_prediction(
+        self, client: TestClient, sample_valid_flow_dict: dict
+    ) -> None:
+        """Verify actual cross-origin POST /api/v1/predict/binary succeeds with correct headers and payload."""
+        headers = {
+            "Origin": "http://localhost:3000",
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        }
+        payload = {
+            "flows": [sample_valid_flow_dict],
+            "threshold_preset": "default",
+        }
+        response = client.post("/api/v1/predict/binary", json=payload, headers=headers)
+        assert response.status_code == 200
+        assert response.headers.get("access-control-allow-origin") == "*"
+        assert response.headers.get("access-control-allow-credentials") is None
+        data = response.json()
+        assert data["model_id"] == "binary_winner"
+        assert len(data["predictions"]) == 1
+        assert "attack_probability" in data["predictions"][0]
+
+    def test_cors_actual_post_for_multiclass_prediction(
+        self, client: TestClient, sample_valid_flow_dict: dict
+    ) -> None:
+        """Verify actual cross-origin POST /api/v1/predict/multiclass succeeds with correct headers."""
+        headers = {
+            "Origin": "http://localhost:3000",
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        }
+        payload = {
+            "flows": [sample_valid_flow_dict],
+            "model_id": "c8",
+        }
+        response = client.post("/api/v1/predict/multiclass", json=payload, headers=headers)
+        assert response.status_code == 200
+        assert response.headers.get("access-control-allow-origin") == "*"
+        assert response.headers.get("access-control-allow-credentials") is None
+        data = response.json()
+        assert data["model_id"] == "c8"
+        assert len(data["predictions"]) == 1
+
