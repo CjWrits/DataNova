@@ -9,11 +9,12 @@ Phase 5 introduces a comprehensive SHAP (SHapley Additive exPlanations) explaina
 
 ## 2. Methodology & Computational Parameters
 
-- **Explainer Architecture:** `shap.TreeExplainer` utilizing tree path-dependent exact Shapley estimation.
-- **Memory Management:** Designed for 16 GB RAM developer workstation; evaluations executed on stratified cohorts.
+- **Explainer Architecture:** `shap.TreeExplainer` utilizing tree path-dependent exact Shapley estimation on the three frozen multiclass models (Phase 3 Baseline, Phase 4 C8 Winner, Phase 4 C10 Robustness Winner).
+- **Output Space:** Raw margin log-odds logits ($z_k$) prior to multi-class softmax. Positive SHAP values indicate positive margin contributions pushing towards the class; negative values indicate margin deductions.
+- **Memory Management:** Designed for 16 GB RAM developer workstation; evaluations executed on stratified cohorts without memory spikes.
 - **Feature Aggregation:** For each sample $i$, class $c$, and parent feature $F$, the composite attribution is defined as $\text{SHAP}(i, F, c) = \sum_{j \in \text{children}(F)} \text{SHAP}(i, j, c)$.
-- **Sample Size:** 1,000 stratified validation instances with guaranteed coverage across rare classes.
-- **Pipeline Execution Time:** 11.00 seconds total.
+- **Sample Cohort:** 1,000 stratified validation instances with guaranteed rare-class representation: Normal (371), Generic (257), Exploits (114), Fuzzers (84), Reconnaissance (44), Analysis (27), Backdoor (27), DoS (27), Shellcode (27), Worms (22).
+- **Pipeline Execution Time:** ~11–14 seconds total.
 
 ## 3. Global Feature Importance Ranking (Top 15 Features)
 

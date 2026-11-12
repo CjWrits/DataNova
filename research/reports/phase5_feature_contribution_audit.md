@@ -19,8 +19,8 @@ Evaluates the exact SHAP attribution and ranking of the 10 domain features in C8
 | `feat_dst_loss_rate` | 0.0474 | 41 | 0.6% | 0.0475 | 41 | 0.6% | +0 |
 | `feat_load_ratio` | 0.0164 | 47 | 0.2% | 0.0159 | 46 | 0.2% | +1 |
 
-## 2. Findings on Feature Redundancy and Attack Specificity
+## 2. Findings on Feature Utilization and Attack Specificity
 
 1. **`feat_byte_asymmetry_ratio` & `feat_load_ratio`:** Emerged as the most influential engineered features, providing primary separation for `DoS` and `Fuzzers` by quantifying transport skew.
 2. **Stability in Absence of STTL:** When `sttl` was removed in Candidate 10, the relative importance of the 10 engineered features increased across the board (positive rank shifts), proving that domain interaction features serve as natural compensatory signals when dataset-specific artifacts are eliminated.
-3. **Zero Redundancy Detected:** All 10 features registered positive SHAP attributions, with distinct class-specific specializations (e.g., `feat_synack_to_rtt_ratio` specifically isolating TCP connection exhaustion).
+3. **Active Utilization Across All 10 Features:** All 10 features registered non-zero positive SHAP attributions, indicating that the tree ensemble actively leveraged each engineered variable across distinct branches and classes. Note: SHAP attribution measures model reliance rather than statistical independence or physical causality; non-zero attribution demonstrates active model utilization rather than mathematically proven zero redundancy.
