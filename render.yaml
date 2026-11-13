@@ -1,0 +1,50 @@
+# ==============================================================================
+# Render Blueprint Specification for Adaptive Threat Intelligence NIDS
+# DataNova Global Data-thon 2026
+#
+# Deploys:
+#   1. datanova-backend: FastAPI Python 3.11 ASGI Service
+#   2. datanova-frontend: Next.js 15 Tailwind SOC Analyst Console
+# ==============================================================================
+
+services:
+  # ----------------------------------------------------------------------------
+  # 1. FastAPI Machine Learning & Inference Backend
+  # ----------------------------------------------------------------------------
+  - type: web
+    name: datanova-backend
+    runtime: python
+    plan: starter
+    region: oregon
+    buildCommand: "pip install --upgrade pip && pip install -r requirements.txt"
+    startCommand: "uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT"
+    healthCheckPath: "/health"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: ENVIRONMENT
+        value: production
+      - key: CORS_ORIGINS
+        value: '["*"]'
+      - key: HIDE_INTERNAL_ERRORS
+        value: "true"
+    autoDeploy: true
+
+  # ----------------------------------------------------------------------------
+  # 2. Next.js 15 Security Operations Center (SOC) Console
+  # ----------------------------------------------------------------------------
+  - type: web
+    name: datanova-frontend
+    runtime: node
+    plan: starter
+    region: oregon
+    rootDir: frontend
+    buildCommand: "npm install && npm run build"
+    startCommand: "npx next start -p $PORT"
+    envVars:
+      - key: NODE_VERSION
+        value: 20.18.0
+      - key: NEXT_PUBLIC_API_URL
+        sync: false
+        # Note: Set this to your live backend URL (e.g. https://datanova-backend.onrender.com)
+    autoDeploy: true

@@ -68,6 +68,8 @@ data/external/*
 *.pcap
 *.pcapng
 *.csv
+!data/processed/unsw_nb15/multiclass/
+!data/processed/unsw_nb15/multiclass/train.csv
 *.parquet
 *.feather
 *.h5
@@ -91,6 +93,10 @@ artifacts/reports/*
 *.pkl
 *.pickle
 *.joblib
+!artifacts/models/phase4/binary_calibrated_winner.joblib
+!artifacts/models/phase4/multiclass_primary_winner.joblib
+!artifacts/models/phase4/multiclass_nosttl_winner.joblib
+!data/processed/unsw_nb15/multiclass/train.csv
 *.onnx
 *.pt
 *.pth
