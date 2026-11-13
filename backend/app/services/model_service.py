@@ -128,16 +128,43 @@ class ModelService:
         self.is_loaded = True
         logger.info(f"ModelService successfully loaded {len(self.models)} models: {list(self.models.keys())}")
 
+        # Verify class order compatibility between C8 and C10
+        if "c8" in self.models and "c10" in self.models:
+            m8 = self.models["c8"]["bundle"]["model"]
+            m10 = self.models["c10"]["bundle"]["model"]
+            if hasattr(m8, "classes_") and hasattr(m10, "classes_"):
+                if not np.array_equal(m8.classes_, m10.classes_):
+                    raise ValueError(
+                        f"Class ordering mismatch between C8 ({m8.classes_}) and C10 ({m10.classes_}). "
+                        "Models must share identical class indexing for comparative probability evaluation."
+                    )
+
     def list_models(self) -> ModelsListResponse:
         """Expose catalog of available loaded models."""
         infos: List[ModelInfo] = []
         for mid, mdata in self.models.items():
             threshold_info = None
+            threshold_matrix = None
             if mid == "binary":
                 opt_points = mdata.get("threshold_points", {})
-                threshold_info = {
-                    name: round(float(pt.threshold), 4) for name, pt in opt_points.items()
-                } if isinstance(opt_points, dict) else {"default": 0.50}
+                if isinstance(opt_points, dict):
+                    threshold_info = {
+                        name: round(float(pt.threshold), 4) for name, pt in opt_points.items()
+                    }
+                    threshold_matrix = {
+                        name: {
+                            "threshold": round(float(pt.threshold), 4),
+                            "accuracy": round(float(pt.accuracy), 4),
+                            "precision": round(float(pt.precision), 4),
+                            "recall": round(float(pt.recall), 4),
+                            "f1": round(float(pt.f1), 4),
+                            "fpr": round(float(pt.fpr), 4),
+                            "cost": round(float(pt.cost), 2),
+                        }
+                        for name, pt in opt_points.items()
+                    }
+                else:
+                    threshold_info = {"default": 0.50}
 
             infos.append(
                 ModelInfo(
@@ -150,6 +177,7 @@ class ModelService:
                     description=mdata["description"],
                     is_default=mdata["is_default"],
                     threshold_info=threshold_info,
+                    threshold_matrix=threshold_matrix,
                 )
             )
         return ModelsListResponse(models=infos, count=len(infos))
@@ -283,6 +311,13 @@ class ModelService:
         X10, _, _, _ = extract_features_and_transform(b10, df, schema="alternative_no_sttl")
         preds_c10 = b10["model"].predict(X10)
         probs_c10 = b10["model"].predict_proba(X10)
+
+        # Guard identical class ordering with explicit runtime exception
+        if not np.array_equal(b8["model"].classes_, b10["model"].classes_):
+            raise ValueError(
+                f"Class ordering mismatch between C8 ({b8['model'].classes_}) and C10 ({b10['model'].classes_}). "
+                "Models must share identical class indexing for comparative probability evaluation."
+            )
 
         items: List[ModelComparisonItem] = []
         agree_count = 0

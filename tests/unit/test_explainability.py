@@ -20,6 +20,7 @@ import joblib
 import numpy as np
 import pandas as pd
 import pytest
+import shap
 
 from ml.explainability.shap_explainer import (
     ExplanationArtifact,
@@ -216,3 +217,83 @@ def test_engineered_features_audit_comparison(c8_model_bundle: Dict[str, Any], s
     df_audit = audit_engineered_features_importance(art_c8, art_c10)
     assert len(df_audit) == 10, "Audit must evaluate exactly 10 engineered features"
     assert set(df_audit["feature"]) == set(ENGINEERED_FEATURE_NAMES)
+
+
+def test_c10_sttl_schema_isolation(sample_validation_slice: pd.DataFrame):
+    """Verify modifying only STTL leaves C10 transformed matrix and predictions strictly identical."""
+    bundle_path = PROJECT_ROOT / "artifacts" / "models" / "phase4" / "multiclass_nosttl_winner.joblib"
+    c10_bundle = joblib.load(bundle_path)
+
+    df1 = sample_validation_slice.head(10).copy()
+    df1["sttl"] = 31.0
+
+    df2 = sample_validation_slice.head(10).copy()
+    df2["sttl"] = 254.0
+
+    X1, names1, _, _ = extract_features_and_transform(c10_bundle, df1, schema="alternative_no_sttl")
+    X2, names2, _, _ = extract_features_and_transform(c10_bundle, df2, schema="alternative_no_sttl")
+
+    # Transformed representations must be strictly identical
+    assert np.array_equal(X1, X2), "C10 transformed feature matrix changed under STTL variation"
+    assert names1 == names2, "Transformed column names changed under STTL variation"
+    assert "sttl" not in names1, "Transformed names contain STTL in C10 model"
+
+    preds1 = c10_bundle["model"].predict(X1)
+    preds2 = c10_bundle["model"].predict(X2)
+    assert np.array_equal(preds1, preds2), "C10 predicted classes changed under STTL variation"
+
+    probs1 = c10_bundle["model"].predict_proba(X1)
+    probs2 = c10_bundle["model"].predict_proba(X2)
+    assert np.allclose(probs1, probs2, atol=1e-7), "C10 output probabilities changed under STTL variation"
+
+
+def test_shap_raw_margin_reconstruction(c8_model_bundle: Dict[str, Any], sample_validation_slice: pd.DataFrame):
+    """Verify SHAP attributions sum to the booster's raw margin output within float32 tolerance."""
+    import xgboost as xgb
+
+    model = c8_model_bundle["model"]
+    df_eval = sample_validation_slice.head(5)
+    X_proc, trans_names, _, _ = extract_features_and_transform(c8_model_bundle, df_eval, schema="primary")
+
+    explainer = shap.TreeExplainer(model)
+    shap_vals = explainer.shap_values(X_proc)
+    expected_vals = explainer.expected_value
+
+    booster = model.get_booster()
+    dmatrix = xgb.DMatrix(X_proc)
+    raw_margins = booster.predict(dmatrix, output_margin=True)
+
+    max_err = 0.0
+    for i in range(len(df_eval)):
+        for k in range(10):
+            recon = expected_vals[k] + np.sum(shap_vals[i, :, k])
+            actual = raw_margins[i, k]
+            err = abs(recon - actual)
+            if err > max_err:
+                max_err = err
+
+    assert max_err < 1e-4, f"SHAP raw-margin reconstruction error too large: {max_err}"
+
+
+def test_shap_parent_attribution_sum_preservation(c8_model_bundle: Dict[str, Any], sample_validation_slice: pd.DataFrame):
+    """Verify aggregating transformed feature attributions to parent features preserves exact sum."""
+    df_eval = sample_validation_slice.head(5)
+    X_proc, trans_names, feat_map, unique_parents = extract_features_and_transform(
+        c8_model_bundle, df_eval, schema="primary"
+    )
+
+    explainer = shap.TreeExplainer(c8_model_bundle["model"])
+    shap_vals = explainer.shap_values(X_proc)
+
+    for i in range(len(df_eval)):
+        for k in range(10):
+            trans_sum = float(np.sum(shap_vals[i, :, k]))
+
+            parent_attributions: Dict[str, float] = {p: 0.0 for p in unique_parents}
+            for trans_idx, tname in enumerate(trans_names):
+                parent = feat_map.get(tname, tname)
+                parent_attributions[parent] += float(shap_vals[i, trans_idx, k])
+
+            parent_sum = float(sum(parent_attributions.values()))
+            diff = abs(trans_sum - parent_sum)
+            assert diff < 1e-5, f"Parent attribution sum discrepancy: {diff}"

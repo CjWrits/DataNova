@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from fastapi import APIRouter, HTTPException, status
 
 from backend.app.core.config import settings
@@ -16,6 +17,7 @@ from backend.app.schemas.flow import (
 from backend.app.services.model_service import ModelService
 
 router = APIRouter()
+logger = logging.getLogger("backend.api.v1.endpoints.predict")
 
 
 @router.post(
@@ -43,10 +45,11 @@ def predict_binary(request: BinaryPredictionRequest) -> BinaryPredictionResponse
     preset = request.threshold_preset or "default"
     try:
         return model_service.predict_binary(request.flows, threshold_preset=preset)
-    except Exception as e:
+    except Exception:
+        logger.exception("Inference failure in predict_binary")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Inference failure: {str(e)}",
+            detail="An internal server error occurred during binary inference.",
         )
 
 
@@ -82,10 +85,11 @@ def predict_multiclass(request: MulticlassPredictionRequest) -> MulticlassPredic
 
     try:
         return model_service.predict_multiclass(request.flows, model_id=model_id)
-    except Exception as e:
+    except Exception:
+        logger.exception("Inference failure in predict_multiclass")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Inference failure: {str(e)}",
+            detail="An internal server error occurred during multiclass prediction.",
         )
 
 
@@ -113,8 +117,9 @@ def compare_models(request: ModelComparisonRequest) -> ModelComparisonResponse:
     model_service = ModelService.get_instance()
     try:
         return model_service.compare_models(request.flows)
-    except Exception as e:
+    except Exception:
+        logger.exception("Comparison failure in compare_models")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Comparison failure: {str(e)}",
+            detail="An internal server error occurred during model comparison.",
         )

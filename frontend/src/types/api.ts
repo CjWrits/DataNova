@@ -282,6 +282,16 @@ export interface SystemStatusResponse {
   active_binary_threshold: number;
 }
 
+export interface ThresholdMatrixPoint {
+  threshold: number;
+  accuracy: number;
+  precision: number;
+  recall: number;
+  f1: number;
+  fpr: number;
+  cost: number;
+}
+
 export interface ModelInfo {
   id: string;
   name: string;
@@ -292,6 +302,7 @@ export interface ModelInfo {
   description: string;
   is_default: boolean;
   threshold_info?: Record<string, number>;
+  threshold_matrix?: Record<string, ThresholdMatrixPoint>;
 }
 
 export interface ModelsListResponse {

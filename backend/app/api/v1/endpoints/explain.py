@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from fastapi import APIRouter, HTTPException, status
 
 from backend.app.core.config import settings
@@ -10,6 +11,7 @@ from backend.app.services.explain_service import ExplainService
 from backend.app.services.model_service import ModelService
 
 router = APIRouter()
+logger = logging.getLogger("backend.api.v1.endpoints.explain")
 
 
 @router.post(
@@ -60,8 +62,9 @@ def explain_predictions(request: ExplainRequest) -> ExplainResponse:
             schema=schema,
             top_k=top_k,
         )
-    except Exception as e:
+    except Exception:
+        logger.exception("Explanation generation failure in explain_predictions")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Explanation generation failure: {str(e)}",
+            detail="An internal server error occurred during explanation generation.",
         )

@@ -35,6 +35,41 @@ import {
   Sliders,
 } from "lucide-react";
 
+const THRESHOLD_ROW_CONFIGS = [
+  {
+    key: "default",
+    name: "Default (0.50 Baseline)",
+    desc: "Default operating threshold (closest grid point to 0.50 on validation sweep; not inherently balanced)",
+    fallback: { threshold: 0.4951, accuracy: 0.9503, precision: 0.9668, recall: 0.9552, f1: 0.9609, fpr: 0.0585 },
+  },
+  {
+    key: "f1_optimal",
+    name: "F1-Optimal",
+    desc: "Validation-set F1-optimal threshold (maximizes harmonic mean of precision and recall)",
+    fallback: { threshold: 0.5247, accuracy: 0.9505, precision: 0.9718, recall: 0.9504, f1: 0.9610, fpr: 0.0492 },
+    isMaxF1: true,
+  },
+  {
+    key: "cost_optimal",
+    name: "Cost-Optimal (Heavy Miss Penalty)",
+    desc: "Threshold minimizing documented asymmetric validation cost (Cost = 1.0·FP + 5.0·FN)",
+    fallback: { threshold: 0.1783, accuracy: 0.9149, precision: 0.8850, recall: 0.9968, f1: 0.9375, fpr: 0.2310 },
+    highlightRow: true,
+  },
+  {
+    key: "low_false_alarm",
+    name: "Low False Alarm (Precision-Oriented)",
+    desc: "Precision-oriented operating threshold (selected for validation FPR ≤ 2.0% constraint; does not authorize automatic blocking)",
+    fallback: { threshold: 0.7227, accuracy: 0.9391, precision: 0.9880, recall: 0.9161, f1: 0.9507, fpr: 0.0198 },
+  },
+  {
+    key: "high_recall",
+    name: "High Recall (Sensitivity-Oriented)",
+    desc: "Recall-oriented operating threshold (selected for validation Recall ≥ 98.0% constraint; high-sensitivity catch-all)",
+    fallback: { threshold: 0.3268, accuracy: 0.9411, precision: 0.9305, recall: 0.9814, f1: 0.9553, fpr: 0.1306 },
+  },
+];
+
 export default function ModelLaboratoryPage() {
   const presetSelectId = useId();
 
@@ -107,6 +142,7 @@ export default function ModelLaboratoryPage() {
     setSelectedPreset(name);
     setComparisonError(null);
     setValidationErrors({});
+    setComparisonResult(null); // Invalidate stale comparison results
     if (name === "benign") {
       setFlowRecord({ ...SAMPLE_BENIGN_FLOW });
     } else if (name === "exploit") {
@@ -116,8 +152,9 @@ export default function ModelLaboratoryPage() {
     }
   };
 
-  // Field change handler
+  // Field change handler with feature-specific protocol validation
   const handleFieldChange = (key: keyof NetworkFlowRecord, value: string) => {
+    setComparisonResult(null); // Invalidate stale comparison results whenever input changes
     const isCat = key === "proto" || key === "service" || key === "state";
     if (isCat) {
       setFlowRecord((prev) => ({ ...prev, [key]: value }));
@@ -139,6 +176,26 @@ export default function ModelLaboratoryPage() {
         setValidationErrors((prev) => ({ ...prev, [key]: "Must be a finite number" }));
       } else if (num < 0) {
         setValidationErrors((prev) => ({ ...prev, [key]: "Cannot be negative (ge=0.0)" }));
+      } else if ((key === "sttl" || key === "dttl") && num > 255) {
+        setValidationErrors((prev) => ({
+          ...prev,
+          [key]: "TTL must be between 0 and 255 (RFC 791 / 8-bit integer)",
+        }));
+      } else if (key === "is_sm_ips_ports" && num !== 0 && num !== 1) {
+        setValidationErrors((prev) => ({
+          ...prev,
+          [key]: "Binary indicator flag must be either 0 or 1",
+        }));
+      } else if (key === "is_ftp_login" && !Number.isInteger(num)) {
+        setValidationErrors((prev) => ({
+          ...prev,
+          [key]: "FTP login count must be an integer (ge=0.0; dataset observed values 0, 1, 2, 4)",
+        }));
+      } else if ((key === "swin" || key === "dwin") && num > 255) {
+        setValidationErrors((prev) => ({
+          ...prev,
+          [key]: "TCP window in UNSW-NB15 representation must be between 0 and 255",
+        }));
       } else {
         if (validationErrors[key]) {
           setValidationErrors((prev) => {
@@ -184,6 +241,8 @@ export default function ModelLaboratoryPage() {
   };
 
   const comparisonItem = comparisonResult?.comparison_items?.[0] || null;
+  const binaryModel = modelsList?.models.find((m) => m.task_type === "binary_detection");
+  const thresholdMatrix = binaryModel?.threshold_matrix;
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -210,7 +269,7 @@ export default function ModelLaboratoryPage() {
           <div className="flex items-center space-x-2 self-start md:self-auto shrink-0">
             <span className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
               <FlaskConical className="h-3.5 w-3.5 text-indigo-600" />
-              <span>3 Frozen Models Loaded</span>
+              <span>{modelsList ? `${modelsList.count} Frozen Models Loaded` : "Loading Models..."}</span>
             </span>
           </div>
         </div>
@@ -716,68 +775,63 @@ export default function ModelLaboratoryPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-700 font-mono text-[11px]">
-              <tr className="hover:bg-slate-50/60">
-                <td className="px-4 py-2.5 font-bold text-slate-900 font-sans">
-                  Default (0.50 Baseline)
-                </td>
-                <td className="px-4 py-2.5 font-bold text-indigo-600">0.4951</td>
-                <td className="px-4 py-2.5">95.03%</td>
-                <td className="px-4 py-2.5">96.68%</td>
-                <td className="px-4 py-2.5">95.52%</td>
-                <td className="px-4 py-2.5 font-semibold text-slate-900">0.9609</td>
-                <td className="px-4 py-2.5">5.85%</td>
-                <td className="px-4 py-2.5 font-sans text-slate-500">Default operating threshold (closest grid point to 0.50 on validation sweep; not inherently balanced)</td>
-              </tr>
-              <tr className="hover:bg-slate-50/60">
-                <td className="px-4 py-2.5 font-bold text-slate-900 font-sans">
-                  F1-Optimal
-                </td>
-                <td className="px-4 py-2.5 font-bold text-indigo-600">0.5247</td>
-                <td className="px-4 py-2.5">95.05%</td>
-                <td className="px-4 py-2.5">97.18%</td>
-                <td className="px-4 py-2.5">95.04%</td>
-                <td className="px-4 py-2.5 font-semibold text-emerald-700">0.9610 (Max)</td>
-                <td className="px-4 py-2.5">4.92%</td>
-                <td className="px-4 py-2.5 font-sans text-slate-500">Validation-set F1-optimal threshold (maximizes harmonic mean of precision and recall)</td>
-              </tr>
-              <tr className="hover:bg-slate-50/60 bg-indigo-50/20">
-                <td className="px-4 py-2.5 font-bold text-indigo-900 font-sans">
-                  Cost-Optimal (Heavy Miss Penalty)
-                </td>
-                <td className="px-4 py-2.5 font-bold text-indigo-600">0.1783</td>
-                <td className="px-4 py-2.5">91.49%</td>
-                <td className="px-4 py-2.5">88.50%</td>
-                <td className="px-4 py-2.5 font-semibold text-emerald-700">99.68%</td>
-                <td className="px-4 py-2.5">0.9375</td>
-                <td className="px-4 py-2.5">23.10%</td>
-                <td className="px-4 py-2.5 font-sans text-slate-700 font-semibold">
-                  Threshold minimizing documented asymmetric validation cost (Cost = 1.0·FP + 5.0·FN)
-                </td>
-              </tr>
-              <tr className="hover:bg-slate-50/60">
-                <td className="px-4 py-2.5 font-bold text-slate-900 font-sans">
-                  Low False Alarm (Precision-Oriented)
-                </td>
-                <td className="px-4 py-2.5 font-bold text-indigo-600">0.7227</td>
-                <td className="px-4 py-2.5">93.91%</td>
-                <td className="px-4 py-2.5 font-semibold text-emerald-700">98.80%</td>
-                <td className="px-4 py-2.5">91.61%</td>
-                <td className="px-4 py-2.5">0.9507</td>
-                <td className="px-4 py-2.5 font-bold text-emerald-700">1.98% (≤ 2.0%)</td>
-                <td className="px-4 py-2.5 font-sans text-slate-500">Precision-oriented operating threshold (selected for validation FPR ≤ 2.0% constraint; does not authorize automatic blocking)</td>
-              </tr>
-              <tr className="hover:bg-slate-50/60">
-                <td className="px-4 py-2.5 font-bold text-slate-900 font-sans">
-                  High Recall (Sensitivity-Oriented)
-                </td>
-                <td className="px-4 py-2.5 font-bold text-indigo-600">0.3268</td>
-                <td className="px-4 py-2.5">94.11%</td>
-                <td className="px-4 py-2.5">93.05%</td>
-                <td className="px-4 py-2.5 font-semibold text-emerald-700">98.14% (≥ 98.0%)</td>
-                <td className="px-4 py-2.5">0.9553</td>
-                <td className="px-4 py-2.5">13.06%</td>
-                <td className="px-4 py-2.5 font-sans text-slate-500">Recall-oriented operating threshold (selected for validation Recall ≥ 98.0% constraint; high-sensitivity catch-all)</td>
-              </tr>
+              {THRESHOLD_ROW_CONFIGS.map((row) => {
+                const pt = thresholdMatrix?.[row.key] || row.fallback;
+                const th = pt.threshold;
+                const acc = (pt.accuracy * 100).toFixed(2);
+                const prec = (pt.precision * 100).toFixed(2);
+                const rec = (pt.recall * 100).toFixed(2);
+                const f1 = pt.f1.toFixed(4);
+                const fpr = (pt.fpr * 100).toFixed(2);
+
+                return (
+                  <tr
+                    key={row.key}
+                    className={`hover:bg-slate-50/60 ${row.highlightRow ? "bg-indigo-50/20" : ""}`}
+                  >
+                    <td
+                      className={`px-4 py-2.5 font-bold font-sans ${
+                        row.highlightRow ? "text-indigo-900" : "text-slate-900"
+                      }`}
+                    >
+                      {row.name}
+                    </td>
+                    <td className="px-4 py-2.5 font-bold text-indigo-600">{th.toFixed(4)}</td>
+                    <td className="px-4 py-2.5">{acc}%</td>
+                    <td
+                      className={`px-4 py-2.5 ${
+                        row.key === "low_false_alarm" ? "font-semibold text-emerald-700" : ""
+                      }`}
+                    >
+                      {prec}%
+                    </td>
+                    <td
+                      className={`px-4 py-2.5 ${
+                        row.key === "cost_optimal" || row.key === "high_recall"
+                          ? "font-semibold text-emerald-700"
+                          : ""
+                      }`}
+                    >
+                      {rec}%{row.key === "high_recall" ? " (≥ 98.0%)" : ""}
+                    </td>
+                    <td
+                      className={`px-4 py-2.5 font-semibold ${
+                        row.isMaxF1 ? "text-emerald-700" : "text-slate-900"
+                      }`}
+                    >
+                      {f1}{row.isMaxF1 ? " (Max)" : ""}
+                    </td>
+                    <td
+                      className={`px-4 py-2.5 ${
+                        row.key === "low_false_alarm" ? "font-bold text-emerald-700" : ""
+                      }`}
+                    >
+                      {fpr}%{row.key === "low_false_alarm" ? " (≤ 2.0%)" : ""}
+                    </td>
+                    <td className="px-4 py-2.5 font-sans text-slate-500">{row.desc}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

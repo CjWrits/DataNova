@@ -22,8 +22,8 @@ class NetworkFlowRecord(BaseModel):
     sbytes: float = Field(..., ge=0.0, description="Source to destination transaction bytes")
     dbytes: float = Field(..., ge=0.0, description="Destination to source transaction bytes")
     rate: float = Field(..., ge=0.0, description="Flow transmission rate")
-    sttl: Optional[float] = Field(64.0, ge=0.0, description="Source time to live")
-    dttl: float = Field(..., ge=0.0, description="Destination time to live")
+    sttl: Optional[float] = Field(64.0, ge=0.0, le=255.0, description="Source time to live")
+    dttl: float = Field(..., ge=0.0, le=255.0, description="Destination time to live")
     sload: float = Field(..., ge=0.0, description="Source bits per second")
     dload: float = Field(..., ge=0.0, description="Destination bits per second")
     sloss: float = Field(..., ge=0.0, description="Source packets retransmitted or dropped")
@@ -32,10 +32,10 @@ class NetworkFlowRecord(BaseModel):
     dinpkt: float = Field(..., ge=0.0, description="Destination interpacket arrival time (msec)")
     sjit: float = Field(..., ge=0.0, description="Source jitter (msec)")
     djit: float = Field(..., ge=0.0, description="Destination jitter (msec)")
-    swin: float = Field(..., ge=0.0, description="Source TCP window advertisement")
+    swin: float = Field(..., ge=0.0, le=255.0, description="Source TCP window advertisement (0-255 in UNSW-NB15 representation)")
     stcpb: float = Field(..., ge=0.0, description="Source TCP sequence number")
     dtcpb: float = Field(..., ge=0.0, description="Destination TCP sequence number")
-    dwin: float = Field(..., ge=0.0, description="Destination TCP window advertisement")
+    dwin: float = Field(..., ge=0.0, le=255.0, description="Destination TCP window advertisement (0-255 in UNSW-NB15 representation)")
     tcprtt: float = Field(..., ge=0.0, description="TCP round trip time (msec)")
     synack: float = Field(..., ge=0.0, description="TCP SYN to SYN-ACK time (msec)")
     ackdat: float = Field(..., ge=0.0, description="TCP SYN-ACK to ACK time (msec)")
@@ -54,7 +54,7 @@ class NetworkFlowRecord(BaseModel):
     ct_flw_http_mthd: float = Field(..., ge=0.0, description="Count of HTTP GET/POST methods in session")
     ct_src_ltm: float = Field(..., ge=0.0, description="Connections from same source address")
     ct_srv_dst: float = Field(..., ge=0.0, description="Connections to same service and destination IP")
-    is_sm_ips_ports: float = Field(..., ge=0.0, description="Binary flag: 1 if source/dest IP and port match")
+    is_sm_ips_ports: float = Field(..., ge=0.0, le=1.0, description="Binary flag: 1 if source/dest IP and port match")
 
     @field_validator("*", mode="before")
     @classmethod
@@ -63,6 +63,22 @@ class NetworkFlowRecord(BaseModel):
         if isinstance(v, float) and (math.isnan(v) or math.isinf(v)):
             raise ValueError("Field must contain a finite numeric value; NaN and Inf are rejected.")
         return v
+
+    @field_validator("is_sm_ips_ports")
+    @classmethod
+    def validate_is_sm_ips_ports(cls, v: Any) -> float:
+        f = float(v)
+        if f not in (0.0, 1.0):
+            raise ValueError("is_sm_ips_ports must be exactly 0 or 1.")
+        return f
+
+    @field_validator("is_ftp_login")
+    @classmethod
+    def validate_is_ftp_login(cls, v: Any) -> float:
+        f = float(v)
+        if f < 0.0 or not f.is_integer():
+            raise ValueError("is_ftp_login must be a non-negative integer (observed 0, 1, 2, 4 in dataset).")
+        return f
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -295,6 +311,7 @@ class ModelInfo(BaseModel):
     description: str
     is_default: bool
     threshold_info: Optional[Dict[str, Any]] = None
+    threshold_matrix: Optional[Dict[str, Dict[str, Any]]] = None
 
 
 class ModelsListResponse(BaseModel):

@@ -236,6 +236,31 @@ class TestModelComparison:
         assert isinstance(item["agreement"], bool)
         assert item["l1_distribution_divergence"] >= 0.0
 
+    def test_model_comparison_class_mismatch_raises_value_error(
+        self, sample_valid_flow_dict: dict
+    ) -> None:
+        """Verify compare_models raises an explicit ValueError when C8 and C10 classes mismatch."""
+        from unittest.mock import MagicMock
+
+        service = ModelService.get_instance()
+        if not service.is_loaded:
+            service.load_models()
+
+        flow = NetworkFlowRecord(**sample_valid_flow_dict)
+        original_model = service.models["c10"]["bundle"]["model"]
+        mock_model = MagicMock()
+        mock_model.classes_ = np.array([9, 8, 7, 6, 5, 4, 3, 2, 1, 0])
+        mock_model.predict.return_value = np.array([0])
+        mock_model.predict_proba.return_value = np.zeros((1, 10))
+
+        try:
+            # Temporarily simulate mismatched class ordering
+            service.models["c10"]["bundle"]["model"] = mock_model
+            with pytest.raises(ValueError, match="Class ordering mismatch between C8"):
+                service.compare_models([flow])
+        finally:
+            service.models["c10"]["bundle"]["model"] = original_model
+
 
 # ============================================================================
 # 6. Drift Monitoring Integration Tests
@@ -351,6 +376,76 @@ class TestInputValidation:
         assert response.status_code == 422
         data = response.json()
         assert data["error_type"] == "ValidationError"
+
+    def test_reject_out_of_bound_fields(
+        self, client: TestClient, sample_valid_flow_dict: dict
+    ) -> None:
+        """Verify out-of-domain fields are rejected with HTTP 422 by backend validation."""
+        # sttl > 255
+        bad = copy.deepcopy(sample_valid_flow_dict)
+        bad["sttl"] = 256.0
+        assert client.post("/api/v1/predict/binary", json={"flows": [bad]}).status_code == 422
+
+        # dttl > 255
+        bad = copy.deepcopy(sample_valid_flow_dict)
+        bad["dttl"] = 256.0
+        assert client.post("/api/v1/predict/binary", json={"flows": [bad]}).status_code == 422
+
+        # swin > 255
+        bad = copy.deepcopy(sample_valid_flow_dict)
+        bad["swin"] = 256.0
+        assert client.post("/api/v1/predict/binary", json={"flows": [bad]}).status_code == 422
+
+        # dwin > 255
+        bad = copy.deepcopy(sample_valid_flow_dict)
+        bad["dwin"] = 256.0
+        assert client.post("/api/v1/predict/binary", json={"flows": [bad]}).status_code == 422
+
+        # is_sm_ips_ports not in (0, 1)
+        bad = copy.deepcopy(sample_valid_flow_dict)
+        bad["is_sm_ips_ports"] = 0.5
+        assert client.post("/api/v1/predict/binary", json={"flows": [bad]}).status_code == 422
+
+        bad["is_sm_ips_ports"] = 2.0
+        assert client.post("/api/v1/predict/binary", json={"flows": [bad]}).status_code == 422
+
+        # is_ftp_login non-integer or negative
+        bad = copy.deepcopy(sample_valid_flow_dict)
+        bad["is_ftp_login"] = 1.5
+        assert client.post("/api/v1/predict/binary", json={"flows": [bad]}).status_code == 422
+
+        bad["is_ftp_login"] = -1.0
+        assert client.post("/api/v1/predict/binary", json={"flows": [bad]}).status_code == 422
+
+    def test_accept_valid_boundary_fields(
+        self, client: TestClient, sample_valid_flow_dict: dict
+    ) -> None:
+        """Verify valid boundary values (sttl/dttl/swin/dwin in [0, 255], is_ftp_login in [0, 1, 2, 4]) are accepted with HTTP 200."""
+        # Boundary 0
+        flow_b0 = copy.deepcopy(sample_valid_flow_dict)
+        flow_b0["sttl"] = 0.0
+        flow_b0["dttl"] = 0.0
+        flow_b0["swin"] = 0.0
+        flow_b0["dwin"] = 0.0
+        flow_b0["is_sm_ips_ports"] = 0.0
+        flow_b0["is_ftp_login"] = 0.0
+        assert client.post("/api/v1/predict/binary", json={"flows": [flow_b0]}).status_code == 200
+
+        # Boundary 255
+        flow_b255 = copy.deepcopy(sample_valid_flow_dict)
+        flow_b255["sttl"] = 255.0
+        flow_b255["dttl"] = 255.0
+        flow_b255["swin"] = 255.0
+        flow_b255["dwin"] = 255.0
+        flow_b255["is_sm_ips_ports"] = 1.0
+        flow_b255["is_ftp_login"] = 1.0
+        assert client.post("/api/v1/predict/binary", json={"flows": [flow_b255]}).status_code == 200
+
+        # Multi-session FTP login values (observed 2 and 4 in dataset)
+        for ftp_val in [2.0, 4.0]:
+            flow_ftp = copy.deepcopy(sample_valid_flow_dict)
+            flow_ftp["is_ftp_login"] = ftp_val
+            assert client.post("/api/v1/predict/binary", json={"flows": [flow_ftp]}).status_code == 200
 
     def test_reject_missing_required_field(
         self, client: TestClient, sample_valid_flow_dict: dict

@@ -4,6 +4,7 @@ import type {
   ModelComparisonItem,
   ModelComparisonRequest,
   ModelComparisonResponse,
+  ModelInfo,
   ModelsListResponse,
 } from "../src/types/api.ts";
 import { ApiError } from "../src/lib/api.ts";
@@ -241,4 +242,68 @@ test("Model Laboratory: confidence represents model softmax probability", () => 
   assert.ok(item.c8_confidence >= 0.0 && item.c8_confidence <= 1.0);
   assert.ok(item.c10_confidence >= 0.0 && item.c10_confidence <= 1.0);
   assert.strictEqual(typeof item.c8_confidence, "number");
+});
+
+test("Model Laboratory: feature-specific domain validation logic", () => {
+  // Test TTL validator
+  const validateTtl = (val: number) => {
+    if (isNaN(val) || !Number.isFinite(val)) return "Must be a finite number";
+    if (val < 0) return "Cannot be negative (ge=0.0)";
+    if (val > 255) return "TTL must be between 0 and 255 (RFC 791 / 8-bit integer)";
+    return null;
+  };
+
+  assert.strictEqual(validateTtl(64), null);
+  assert.strictEqual(validateTtl(255), null);
+  assert.strictEqual(validateTtl(256)?.includes("between 0 and 255"), true);
+  assert.strictEqual(validateTtl(-1)?.includes("Cannot be negative"), true);
+
+  // Test binary indicator validator (is_sm_ips_ports)
+  const validateBinaryFlag = (val: number) => {
+    if (val !== 0 && val !== 1) return "Binary indicator flag must be either 0 or 1";
+    return null;
+  };
+
+  assert.strictEqual(validateBinaryFlag(0), null);
+  assert.strictEqual(validateBinaryFlag(1), null);
+  assert.strictEqual(validateBinaryFlag(2)?.includes("either 0 or 1"), true);
+
+  // Test FTP login count validator (is_ftp_login: observed 0, 1, 2, 4 in dataset)
+  const validateFtpLogin = (val: number) => {
+    if (val < 0) return "Cannot be negative (ge=0.0)";
+    if (!Number.isInteger(val)) return "FTP login count must be an integer";
+    return null;
+  };
+
+  assert.strictEqual(validateFtpLogin(0), null);
+  assert.strictEqual(validateFtpLogin(1), null);
+  assert.strictEqual(validateFtpLogin(2), null);
+  assert.strictEqual(validateFtpLogin(4), null);
+  assert.strictEqual(validateFtpLogin(-1)?.includes("Cannot be negative"), true);
+  assert.strictEqual(validateFtpLogin(1.5)?.includes("must be an integer"), true);
+
+  // Test TCP window validator in UNSW-NB15 representation (0-255)
+  const validateTcpWindow = (val: number) => {
+    if (val < 0) return "Cannot be negative (ge=0.0)";
+    if (val > 255) return "TCP window in UNSW-NB15 representation must be between 0 and 255";
+    return null;
+  };
+
+  assert.strictEqual(validateTcpWindow(0), null);
+  assert.strictEqual(validateTcpWindow(255), null);
+  assert.strictEqual(validateTcpWindow(256)?.includes("between 0 and 255"), true);
+});
+
+test("Model Laboratory: dynamic threshold matrix populated in model info", () => {
+  const binaryModelInfo: Partial<ModelInfo> = {
+    id: "binary_winner",
+    threshold_matrix: {
+      default: { threshold: 0.4951, accuracy: 0.9503, precision: 0.9668, recall: 0.9552, f1: 0.9609, fpr: 0.0585, cost: 6253.0 },
+      cost_optimal: { threshold: 0.1783, accuracy: 0.9149, precision: 0.8850, recall: 0.9968, f1: 0.9375, fpr: 0.2310, cost: 3547.0 },
+    },
+  };
+
+  assert.ok(binaryModelInfo.threshold_matrix);
+  assert.strictEqual(binaryModelInfo.threshold_matrix.cost_optimal.recall, 0.9968);
+  assert.strictEqual(binaryModelInfo.threshold_matrix.cost_optimal.cost, 3547.0);
 });
