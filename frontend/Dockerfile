@@ -11,6 +11,7 @@ COPY package*.json ./
 RUN npm ci
 
 COPY . .
+RUN mkdir -p /app/public
 
 # Pass backend URL at build time for client-side API calls
 ARG NEXT_PUBLIC_API_URL=http://localhost:8000
