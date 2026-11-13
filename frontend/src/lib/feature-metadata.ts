@@ -491,3 +491,8 @@ export const FEATURE_GROUPS: FeatureGroup[] = [
 ];
 
 export const ALL_42_FEATURE_KEYS: (keyof NetworkFlowRecord)[] = FEATURE_METADATA.map((f) => f.key);
+
+export const FEATURE_METADATA_MAP: Record<string, FeatureMeta> = Object.fromEntries(
+  FEATURE_METADATA.map((f) => [f.key, f])
+);
+
