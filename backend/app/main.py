@@ -70,6 +70,27 @@ app.add_middleware(
 )
 
 
+# Root Service Index
+@app.get(
+    "/",
+    tags=["Health & Status"],
+    summary="Root Service Index",
+    description="Returns high-level service status and links to documentation.",
+)
+def root_index() -> dict:
+    model_service = ModelService.get_instance()
+    monitoring_service = MonitoringService.get_instance()
+    return {
+        "service": settings.PROJECT_NAME,
+        "version": settings.VERSION,
+        "status": "operational",
+        "models_ready": model_service.is_loaded,
+        "reference_data_ready": monitoring_service.is_loaded,
+        "docs_url": "/docs",
+        "health_url": "/health",
+    }
+
+
 # Root Health Check
 @app.get(
     "/health",
