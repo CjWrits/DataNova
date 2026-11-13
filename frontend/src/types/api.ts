@@ -160,7 +160,7 @@ export interface ModelComparisonResponse {
 // ============================================================================
 
 export interface DriftMonitoringRequest {
-  flows: Record<string, unknown>[];
+  flows: (NetworkFlowRecord | Record<string, unknown>)[];
   batch_id?: string;
 }
 
