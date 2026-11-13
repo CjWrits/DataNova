@@ -24,15 +24,19 @@ const PRODUCTION_DEFAULT_BACKEND = "https://datanova-backend-8ef2.onrender.com";
 
 export function getApiBaseUrl(): string {
   if (typeof window !== "undefined") {
+    // If running on Render, use same-origin relative path to leverage Next.js rewrite proxy.
+    // This routes requests server-to-server and 100% eliminates browser CORS / client fetch blocks!
+    if (window.location.hostname.includes("onrender.com")) {
+      const custom = localStorage.getItem("DATANOVA_API_URL");
+      if (custom && custom.includes("direct=true")) {
+        return custom.replace("?direct=true", "").replace(/\/$/, "");
+      }
+      return "";
+    }
+
     const custom = localStorage.getItem("DATANOVA_API_URL");
     if (custom && custom.trim().length > 0) {
       return custom.trim().replace(/\/$/, "");
-    }
-
-    // When running in production on Render, use relative path to leverage Next.js rewrite proxy.
-    // This completely eliminates CORS, preflight, and mixed-content issues!
-    if (window.location.hostname.includes("onrender.com")) {
-      return "";
     }
   }
 

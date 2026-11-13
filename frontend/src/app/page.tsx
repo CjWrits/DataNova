@@ -39,24 +39,41 @@ export default function OverviewPage() {
   const fetchTelemetry = async () => {
     setLoading(true);
     setError(null);
+    let hRes: HealthResponse | null = null;
+    let sRes: SystemStatusResponse | null = null;
+    let mRes: ModelsListResponse | null = null;
+    const failures: string[] = [];
+
     try {
-      const [hRes, sRes, mRes] = await Promise.all([
-        api.getHealth(),
-        api.getSystemStatus(),
-        api.getModels(),
-      ]);
+      hRes = await api.getHealth();
       setHealth(hRes);
-      setSystem(sRes);
-      setModels(mRes);
-    } catch (err: unknown) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to connect to FastAPI backend at http://127.0.0.1:8000"
-      );
-    } finally {
-      setLoading(false);
+    } catch (e: unknown) {
+      failures.push(`Health (/health): ${e instanceof Error ? e.message : String(e)}`);
     }
+
+    try {
+      sRes = await api.getSystemStatus();
+      setSystem(sRes);
+    } catch (e: unknown) {
+      failures.push(`Status (/api/v1/system/status): ${e instanceof Error ? e.message : String(e)}`);
+    }
+
+    try {
+      mRes = await api.getModels();
+      setModels(mRes);
+    } catch (e: unknown) {
+      failures.push(`Models (/api/v1/models): ${e instanceof Error ? e.message : String(e)}`);
+    }
+
+    if (!hRes && !sRes && !mRes) {
+      setError(
+        failures.join(" | ") ||
+          `Failed to connect to backend at ${getApiBaseUrl() || "same-origin proxy"}`
+      );
+    } else {
+      setError(null);
+    }
+    setLoading(false);
   };
 
   useEffect(() => {
