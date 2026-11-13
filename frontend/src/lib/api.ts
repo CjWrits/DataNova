@@ -20,6 +20,8 @@ import type {
   SystemStatusResponse,
 } from "@/types/api";
 
+const PRODUCTION_DEFAULT_BACKEND = "https://datanova-backend-8ef2.onrender.com";
+
 export function getApiBaseUrl(): string {
   if (typeof window !== "undefined") {
     const custom = localStorage.getItem("DATANOVA_API_URL");
@@ -27,10 +29,10 @@ export function getApiBaseUrl(): string {
       return custom.trim().replace(/\/$/, "");
     }
 
-    const host = window.location.hostname;
-    // Auto-detect Render sibling backend (e.g. datanova-frontend.onrender.com -> datanova-backend.onrender.com)
-    if (host.includes("onrender.com") && host.includes("-frontend")) {
-      return `https://${host.replace("-frontend", "-backend")}`;
+    // When running in production on Render, use relative path to leverage Next.js rewrite proxy.
+    // This completely eliminates CORS, preflight, and mixed-content issues!
+    if (window.location.hostname.includes("onrender.com")) {
+      return "";
     }
   }
 
@@ -43,7 +45,7 @@ export function getApiBaseUrl(): string {
     return envUrl.replace(/\/$/, "");
   }
 
-  return envUrl?.replace(/\/$/, "") || "http://127.0.0.1:8000";
+  return envUrl?.replace(/\/$/, "") || PRODUCTION_DEFAULT_BACKEND;
 }
 
 export function setApiBaseUrl(url: string): void {
@@ -78,11 +80,13 @@ export class ApiError extends Error {
 async function apiFetch<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const baseUrl = getApiBaseUrl();
   const url = `${baseUrl}${endpoint}`;
-  const headers = {
-    "Content-Type": "application/json",
+  const headers: Record<string, string> = {
     Accept: "application/json",
-    ...options.headers,
+    ...(options.headers as Record<string, string>),
   };
+  if (options.body) {
+    headers["Content-Type"] = "application/json";
+  }
 
   try {
     const res = await fetch(url, {

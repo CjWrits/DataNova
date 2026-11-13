@@ -14,7 +14,7 @@ COPY . .
 RUN mkdir -p /app/public
 
 # Pass backend URL at build time for client-side API calls
-ARG NEXT_PUBLIC_API_URL=http://localhost:8000
+ARG NEXT_PUBLIC_API_URL=https://datanova-backend-8ef2.onrender.com
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 
 RUN npm run build
