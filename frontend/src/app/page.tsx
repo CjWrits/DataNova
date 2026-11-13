@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { api } from "@/lib/api";
+import { api, getApiBaseUrl, setApiBaseUrl } from "@/lib/api";
 import type { HealthResponse, ModelsListResponse, SystemStatusResponse } from "@/types/api";
 import {
   Activity,
@@ -25,6 +25,16 @@ export default function OverviewPage() {
   const [models, setModels] = useState<ModelsListResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [customBackendUrl, setCustomBackendUrl] = useState<string>("");
+
+  useEffect(() => {
+    setCustomBackendUrl(getApiBaseUrl());
+  }, []);
+
+  const handleSaveBackendUrl = (urlToSave: string) => {
+    setApiBaseUrl(urlToSave);
+    fetchTelemetry();
+  };
 
   const fetchTelemetry = async () => {
     setLoading(true);
@@ -86,17 +96,53 @@ export default function OverviewPage() {
 
       {/* Backend Connection Status Alert if Offline */}
       {error && (
-        <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 flex items-start space-x-3 text-xs">
-          <AlertTriangle className="h-5 w-5 text-rose-600 shrink-0 mt-0.5" />
-          <div className="flex-1">
-            <h4 className="font-semibold text-rose-900">Backend Connection Error</h4>
-            <p className="mt-0.5 text-rose-700">{error}</p>
-            <p className="mt-1 text-[11px] text-rose-600">
-              Ensure the FastAPI backend is running via{" "}
-              <code className="font-mono bg-rose-100 px-1 py-0.5 rounded text-rose-900">
-                python -m uvicorn backend.app.main:app --port 8000
+        <div className="p-5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 space-y-3 text-xs">
+          <div className="flex items-start space-x-3">
+            <AlertTriangle className="h-5 w-5 text-rose-600 shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <h4 className="font-semibold text-rose-900">Backend Connection Error</h4>
+              <p className="mt-0.5 text-rose-700">{error}</p>
+            </div>
+          </div>
+
+          <div className="p-3.5 bg-white rounded-lg border border-rose-200 text-slate-800 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="font-semibold text-slate-900">Configure Cloud / Live Backend URL</span>
+              <span className="text-[11px] text-slate-500 font-mono">
+                Current: {getApiBaseUrl()}
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-600">
+              If your FastAPI backend is running on Render (e.g.{" "}
+              <code className="font-mono bg-slate-100 px-1 py-0.5 rounded text-indigo-700">
+                https://datanova-backend.onrender.com
               </code>
+              ), paste its URL below and click Connect:
             </p>
+            <div className="flex items-center space-x-2 pt-1">
+              <input
+                type="text"
+                value={customBackendUrl}
+                onChange={(e) => setCustomBackendUrl(e.target.value)}
+                placeholder="https://datanova-backend.onrender.com"
+                className="flex-1 px-3 py-1.5 text-xs rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 font-mono"
+              />
+              <button
+                onClick={() => handleSaveBackendUrl(customBackendUrl)}
+                className="px-4 py-1.5 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition shrink-0"
+              >
+                Connect & Save
+              </button>
+              <button
+                onClick={() => {
+                  setCustomBackendUrl("http://127.0.0.1:8000");
+                  handleSaveBackendUrl("http://127.0.0.1:8000");
+                }}
+                className="px-2.5 py-1.5 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition shrink-0 text-[11px]"
+              >
+                Reset
+              </button>
+            </div>
           </div>
         </div>
       )}

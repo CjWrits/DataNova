@@ -20,8 +20,41 @@ import type {
   SystemStatusResponse,
 } from "@/types/api";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "http://127.0.0.1:8000";
+export function getApiBaseUrl(): string {
+  if (typeof window !== "undefined") {
+    const custom = localStorage.getItem("DATANOVA_API_URL");
+    if (custom && custom.trim().length > 0) {
+      return custom.trim().replace(/\/$/, "");
+    }
+
+    const host = window.location.hostname;
+    // Auto-detect Render sibling backend (e.g. datanova-frontend.onrender.com -> datanova-backend.onrender.com)
+    if (host.includes("onrender.com") && host.includes("-frontend")) {
+      return `https://${host.replace("-frontend", "-backend")}`;
+    }
+  }
+
+  const envUrl = process.env.NEXT_PUBLIC_API_URL;
+  if (
+    envUrl &&
+    !envUrl.includes("127.0.0.1") &&
+    !envUrl.includes("localhost")
+  ) {
+    return envUrl.replace(/\/$/, "");
+  }
+
+  return envUrl?.replace(/\/$/, "") || "http://127.0.0.1:8000";
+}
+
+export function setApiBaseUrl(url: string): void {
+  if (typeof window !== "undefined") {
+    if (!url || url.trim().length === 0) {
+      localStorage.removeItem("DATANOVA_API_URL");
+    } else {
+      localStorage.setItem("DATANOVA_API_URL", url.trim().replace(/\/$/, ""));
+    }
+  }
+}
 
 export class ApiError extends Error {
   public readonly statusCode: number;
@@ -43,7 +76,8 @@ export class ApiError extends Error {
 }
 
 async function apiFetch<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  const url = `${API_BASE_URL}${endpoint}`;
+  const baseUrl = getApiBaseUrl();
+  const url = `${baseUrl}${endpoint}`;
   const headers = {
     "Content-Type": "application/json",
     Accept: "application/json",
@@ -85,7 +119,7 @@ async function apiFetch<T>(endpoint: string, options: RequestInit = {}): Promise
       throw err;
     }
     const message = err instanceof Error ? err.message : "Network error connecting to backend";
-    throw new ApiError(0, "NetworkError", `Backend connection failed: ${message}`);
+    throw new ApiError(0, "NetworkError", `Backend connection failed (${baseUrl}): ${message}`);
   }
 }
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { api } from "@/lib/api";
+import { api, getApiBaseUrl } from "@/lib/api";
 import type { HealthResponse } from "@/types/api";
 import { RefreshCw, Server, XCircle } from "lucide-react";
 
@@ -63,7 +63,7 @@ export function Header() {
           ) : (
             <span
               className="inline-flex items-center space-x-1.5 px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 font-medium border border-rose-200"
-              title={error || "Offline"}
+              title={`${error || "Offline"} — Target: ${getApiBaseUrl()}`}
             >
               <XCircle className="h-3 w-3 text-rose-500" />
               <span>Offline</span>
